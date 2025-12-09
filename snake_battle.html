@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Neon Snake Battle</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    /* GLOBAL VIBE */
+    @import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@300;500&display=swap");
+
+    * {
+      box-sizing: border-box;
+      padding: 0;
+      margin: 0;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at top, #14213d 0, #000 40%),
+        radial-gradient(circle at bottom, #000 0, #020308 60%);
+      color: #e0faff;
+      font-family: "Orbitron", system-ui, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .game-shell {
+      width: min(960px, 95vw);
+      border-radius: 24px;
+      padding: 18px 22px 26px;
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.08), rgba(0, 255, 170, 0.02));
+      box-shadow:
+        0 0 25px rgba(0, 255, 255, 0.25),
+        0 0 80px rgba(0, 180, 255, 0.35);
+      border: 1px solid rgba(0, 255, 255, 0.4);
+      position: relative;
+      backdrop-filter: blur(12px);
+    }
+
+    .game-shell::before {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      border-radius: inherit;
+      background:
+        conic-gradient(from 120deg,
+          rgba(0, 255, 255, 0.2),
+          transparent 15%,
+          rgba(0, 200, 255, 0.4),
+          transparent 55%,
+          rgba(190, 255, 0, 0.3),
+          transparent 80%);
+      mix-blend-mode: screen;
+      opacity: 0.8;
+      filter: blur(16px);
+      z-index: -1;
+      animation: holoSweep 10s linear infinite;
+    }
+
+    @keyframes holoSweep {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 12px;
+    }
+
+    .title-block {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    h1 {
+      font-size: 1.7rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #e6ffff;
+      text-shadow:
+        0 0 10px rgba(0, 255, 255, 0.8),
+        0 0 25px rgba(0, 200, 255, 0.6);
+    }
+
+    .subtitle {
+      font-family: "Roboto Mono", monospace;
+      font-size: 0.75rem;
+      opacity: 0.85;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: #94f7ff;
+    }
+
+    .hud {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: "Roboto Mono", monospace;
+      font-size: 0.8rem;
+    }
+
+    .hud-panel {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(0, 255, 255, 0.35);
+      background: radial-gradient(circle at top left, rgba(0, 255, 255, 0.14), rgba(0, 0, 10, 0.8));
+      box-shadow: 0 0 12px rgba(0, 255, 255, 0.4);
+    }
+
+    .hud-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      opacity: 0.7;
+    }
+
+    .hud-value {
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      box-shadow: 0 0 10px currentColor;
+    }
+
+    .dot.player {
+      background: #24ff9c;
+      color: #24ff9c;
+    }
+
+    .dot.ai {
+      background: #ff2a7f;
+      color: #ff2a7f;
+    }
+
+    .status {
+      margin-left: auto;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: #b2e9ff;
+      opacity: 0.9;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-led {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #00ffbf;
+      box-shadow:
+        0 0 8px rgba(0, 255, 191, 0.9),
+        0 0 16px rgba(0, 255, 191, 0.7);
+      animation: ledPulse 1.4s ease-in-out infinite;
+    }
+
+    .status.paused .status-led {
+      background: #ffbf00;
+      box-shadow:
+        0 0 8px rgba(255, 191, 0, 0.9),
+        0 0 18px rgba(255, 191, 0, 0.8);
+    }
+
+    .status.over .status-led {
+      background: #ff315e;
+      box-shadow:
+        0 0 8px rgba(255, 49, 94, 0.9),
+        0 0 20px rgba(255, 49, 94, 0.9);
+      animation: none;
+    }
+
+    @keyframes ledPulse {
+      0%, 100% { transform: scale(0.9); opacity: 0.7; }
+      50% { transform: scale(1.2); opacity: 1; }
+    }
+
+    /* GAME AREA */
+    .game-wrap {
+      margin-top: 12px;
+      position: relative;
+      border-radius: 20px;
+      padding: 14px;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(0, 255, 200, 0.18), transparent 55%),
+        radial-gradient(circle at 90% 70%, rgba(180, 0, 255, 0.25), transparent 55%),
+        radial-gradient(circle at 10% 100%, rgba(0, 120, 255, 0.3), transparent 60%);
+      border: 1px solid rgba(0, 255, 255, 0.35);
+      box-shadow:
+        inset 0 0 15px rgba(0, 0, 0, 0.85),
+        0 0 30px rgba(0, 255, 255, 0.5);
+    }
+
+    .game-inner {
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+      margin: auto;
+      border-radius: 18px;
+      background: radial-gradient(circle at top, #050612 0, #01020a 50%, #000 100%);
+      box-shadow:
+        inset 0 0 18px rgba(0, 255, 255, 0.32),
+        0 0 32px rgba(0, 0, 0, 1);
+    }
+
+    .scanlines {
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+      border-radius: 18px;
+      background-image: repeating-linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.06) 0,
+        rgba(255, 255, 255, 0.06) 1px,
+        transparent 1px,
+        transparent 3px
+      );
+      mix-blend-mode: soft-light;
+      opacity: 0.32;
+    }
+
+    .overlay-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      pointer-events: none;
+      border-radius: 18px;
+      background: radial-gradient(circle at center, rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.88));
+      color: #e9feff;
+    }
+
+    .overlay-text.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease-out;
+    }
+
+    .overlay-title {
+      font-size: 1.4rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      text-shadow:
+        0 0 18px rgba(0, 255, 255, 0.9),
+        0 0 26px rgba(0, 160, 255, 0.8);
+    }
+
+    .overlay-sub {
+      font-family: "Roboto Mono", monospace;
+      font-size: 0.8rem;
+      max-width: 420px;
+      line-height: 1.5;
+      opacity: 0.9;
+      margin-bottom: 14px;
+    }
+
+    .overlay-keys {
+      font-family: "Roboto Mono", monospace;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #90f1ff;
+    }
+
+    .overlay-keys span {
+      background: rgba(0, 255, 255, 0.16);
+      border-radius: 999px;
+      padding: 3px 9px;
+      margin: 0 4px;
+      border: 1px solid rgba(0, 255, 255, 0.4);
+      box-shadow: 0 0 12px rgba(0, 255, 255, 0.4);
+    }
+
+    /* FOOTER CONTROLS */
+    .footer {
+      margin-top: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      font-family: "Roboto Mono", monospace;
+      font-size: 0.75rem;
+    }
+
+    .controls-help {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 10px;
+      opacity: 0.85;
+    }
+
+    .key-hint {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 244, 255, 0.5);
+      background: radial-gradient(circle at top, rgba(148, 244, 255, 0.2), transparent 60%);
+    }
+
+    .key {
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(148, 244, 255, 0.8);
+      font-size: 0.68rem;
+      text-transform: uppercase;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      border-radius: 999px;
+      padding: 6px 14px;
+      border: 1px solid rgba(0, 255, 255, 0.6);
+      background: radial-gradient(circle at top left, rgba(0, 255, 255, 0.6), rgba(0, 50, 80, 0.9));
+      font-family: "Orbitron", system-ui, sans-serif;
+      font-size: 0.78rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #001018;
+      cursor: pointer;
+      box-shadow:
+        0 0 12px rgba(0, 255, 255, 0.85),
+        0 0 30px rgba(0, 255, 255, 0.6);
+      transition: transform 0.07s ease, box-shadow 0.1s ease, background 0.17s ease;
+    }
+
+    .btn.secondary {
+      border-color: rgba(255, 255, 255, 0.4);
+      background: radial-gradient(circle at top right, rgba(200, 200, 200, 0.7), rgba(20, 20, 20, 0.9));
+      color: #e6faff;
+      box-shadow:
+        0 0 10px rgba(255, 255, 255, 0.45),
+        0 0 25px rgba(255, 255, 255, 0.35);
+    }
+
+    .btn:active {
+      transform: scale(0.96) translateY(1px);
+      box-shadow:
+        0 0 8px rgba(0, 255, 255, 0.7),
+        0 0 18px rgba(0, 255, 255, 0.45);
+    }
+
+    @media (max-width: 720px) {
+      .game-shell {
+        padding: 14px 12px 18px;
+      }
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .status {
+        margin-left: 0;
+      }
+      .footer {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-shell">
+    <header>
+      <div class="title-block">
+        <h1>NEON SNAKE BATTLE</h1>
+        <div class="subtitle">Player vs AI · Sector 01</div>
+      </div>
+
+      <div class="hud">
+        <div class="hud-panel">
+          <span class="dot player"></span>
+          <span class="hud-label">Pilot</span>
+          <span class="hud-value" id="playerScore">0</span>
+        </div>
+        <div class="hud-panel">
+          <span class="dot ai"></span>
+          <span class="hud-label">CPU</span>
+          <span class="hud-value" id="aiScore">0</span>
+        </div>
+      </div>
+
+      <div id="status" class="status">
+        <div class="status-led"></div>
+        <span id="statusText">Ready</span>
+      </div>
+    </header>
+
+    <div class="game-wrap">
+      <div class="game-inner">
+        <canvas id="game" width="600" height="400"></canvas>
+        <div class="scanlines"></div>
+
+        <div id="overlay" class="overlay-text">
+          <div class="overlay-title">Press Space To Deploy</div>
+          <div class="overlay-sub">
+            You are the neon green snake. The AI is glowing magenta. Race the computer to the energy orb.
+            Eat more orbs, stay alive longer, and dominate the grid.
+          </div>
+          <div class="overlay-keys">
+            <div><span>W A S D</span> or <span>Arrow Keys</span> to steer</div>
+            <div style="margin-top:8px;"><span>Space</span> pause / resume · <span>R</span> reset round</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="controls-help">
+        <div class="key-hint">
+          <span class="key">W A S D</span> / <span class="key">↑ ↓ ← →</span> move
+        </div>
+        <div class="key-hint">
+          <span class="key">Space</span> pause
+        </div>
+        <div class="key-hint">
+          <span class="key">R</span> new round
+        </div>
+      </div>
+      <div class="btn-row">
+        <button id="btnPause" class="btn secondary">Pause</button>
+        <button id="btnReset" class="btn">New Round</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    const tileSize = 20;
+    const tilesX = canvas.width / tileSize;
+    const tilesY = canvas.height / tileSize;
+
+    const statusEl = document.getElementById("status");
+    const statusText = document.getElementById("statusText");
+    const overlay = document.getElementById("overlay");
+    const playerScoreEl = document.getElementById("playerScore");
+    const aiScoreEl = document.getElementById("aiScore");
+    const btnPause = document.getElementById("btnPause");
+    const btnReset = document.getElementById("btnReset");
+
+    let gameInterval = null;
+    let tickDelay = 110;
+
+    let playerScore = 0;
+    let aiScore = 0;
+
+    let player;
+    let ai;
+    let food;
+
+    let isRunning = false;
+    let isGameOver = false;
+    let frame = 0;
+
+    function createSnake(startX, startY, dirX, dirY, length, isAI = false) {
+      const body = [];
+      for (let i = 0; i < length; i++) {
+        body.push({ x: startX - dirX * i, y: startY - dirY * i });
+      }
+      return {
+        body,
+        dir: { x: dirX, y: dirY },
+        nextDir: { x: dirX, y: dirY },
+        isAI
+      };
+    }
+
+    function resetRound(hardResetScores = false) {
+      const centerX = Math.floor(tilesX / 4);
+      const centerY = Math.floor(tilesY / 2);
+
+      player = createSnake(centerX, centerY, 1, 0, 4, false);
+      ai = createSnake(tilesX - centerX - 1, centerY, -1, 0, 4, true);
+
+      food = randomFood();
+
+      isGameOver = false;
+      if (hardResetScores) {
+        playerScore = 0;
+        aiScore = 0;
+      }
+      updateScoreUI();
+
+      setStatus("Running");
+      statusEl.classList.remove("paused", "over");
+      statusEl.classList.add("running");
+      overlay.classList.add("hidden");
+
+      if (!isRunning) {
+        startLoop();
+      }
+    }
+
+    function randomFood() {
+      while (true) {
+        const fx = Math.floor(Math.random() * tilesX);
+        const fy = Math.floor(Math.random() * tilesY);
+        if (!isOccupied(fx, fy, player) && !isOccupied(fx, fy, ai)) {
+          return { x: fx, y: fy };
+        }
+      }
+    }
+
+    function isOccupied(x, y, snake) {
+      if (!snake) return false;
+      return snake.body.some(seg => seg.x === x && seg.y === y);
+    }
+
+    function startLoop() {
+      if (gameInterval) clearInterval(gameInterval);
+      isRunning = true;
+      gameInterval = setInterval(tick, tickDelay);
+    }
+
+    function pauseLoop() {
+      isRunning = false;
+      if (gameInterval) clearInterval(gameInterval);
+    }
+
+    function setStatus(text) {
+      statusText.textContent = text;
+    }
+
+    function updateScoreUI() {
+      playerScoreEl.textContent = playerScore;
+      aiScoreEl.textContent = aiScore;
+    }
+
+    function chooseAIDirection() {
+      const head = ai.body[0];
+      const currentDir = ai.dir;
+
+      const possible =

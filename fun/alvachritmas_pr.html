@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AlvaChristmas: Coquí Catch – Puerto Rico Edition</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #021225 0, #000 55%, #000 100%);
+      color: #f7f9ff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    .shell {
+      width: min(900px, 100%);
+      border-radius: 20px;
+      padding: 14px 18px 18px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,0,80,0.12));
+      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow:
+        0 0 25px rgba(0,0,0,0.8),
+        0 0 40px rgba(0,255,180,0.25);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .title-block {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: #ffffff;
+      text-shadow:
+        0 0 10px rgba(0,255,180,0.7),
+        0 0 20px rgba(0,180,255,0.8);
+    }
+
+    .subtitle {
+      font-size: 0.75rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #ffe9f0;
+      opacity: 0.9;
+    }
+
+    .hud {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.8rem;
+    }
+
+    .badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.35);
+      background: radial-gradient(circle at top, rgba(255,255,255,0.18), rgba(0,0,0,0.75));
+    }
+
+    .label {
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 0.68rem;
+      opacity: 0.8;
+    }
+
+    .value {
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .timer {
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #ffe48a;
+    }
+
+    .lives {
+      color: #ffb6c1;
+    }
+
+    .game-wrap {
+      margin-top: 10px;
+      border-radius: 18px;
+      padding: 10px;
+      background:
+        radial-gradient(circle at top, rgba(255,255,255,0.09), transparent 55%),
+        radial-gradient(circle at bottom, rgba(255,0,80,0.18), transparent 60%);
+      border: 1px solid rgba(255,255,255,0.16);
+    }
+
+    canvas {
+      display: block;
+      margin: auto;
+      border-radius: 14px;
+      background: linear-gradient(
+        to bottom,
+        #020b1a 0,
+        #021b34 40%,
+        #02263f 65%,
+        #043027 80%,
+        #071812 100%
+      );
+      box-shadow:
+        inset 0 0 18px rgba(0,0,0,0.9),
+        0 0 24px rgba(0,0,0,0.9);
+    }
+
+    .footer {
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 0.78rem;
+      color: #f4ffff;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 10px;
+    }
+
+    .key-hint {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 7px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.35);
+      background: rgba(0,0,0,0.35);
+    }
+
+    .key {
+      border-radius: 4px;
+      padding: 1px 5px;
+      border: 1px solid rgba(255,255,255,0.5);
+      font-size: 0.7rem;
+      background: rgba(255,255,255,0.07);
+    }
+
+    .hint-label {
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.68rem;
+      opacity: 0.85;
+    }
+
+    .tip {
+      opacity: 0.9;
+      font-size: 0.76rem;
+    }
+
+    @media (max-width: 720px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .footer {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="title-block">
+        <h1>ALVACHRISTMAS</h1>
+        <div class="subtitle">Coquí Catch · Puerto Rico Edition</div>
+      </div>
+      <div class="hud">
+        <div class="badge">
+          <span class="label">Score</span>
+          <span class="value" id="scoreDisplay">0</span>
+        </div>
+        <div class="badge">
+          <span class="label">Time</span>
+          <span class="timer" id="timeDisplay">60</span>
+        </div>
+        <div class="badge">
+          <span class="label">Lives</span>
+          <span class="value lives" id="livesDisplay">3</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="game-wrap">
+      <canvas id="game" width="800" height="480"></canvas>
+    </div>
+
+    <div class="footer">
+      <div class="controls">
+        <div class="key-hint">
+          <span class="key">A</span><span class="key">D</span>
+          <span class="hint-label">or</span>
+          <span class="key">←</span><span class="key">→</span>
+          <span class="hint-label">Mover guagüita</span>
+        </div>
+        <div class="key-hint">
+          <span class="key">Space</span>
+          <span class="hint-label">Start / Restart</span>
+        </div>
+      </div>
+      <div class="tip">
+        Atrapa coquís 🐸 y banderas 🇵🇷, esquiva cocos 🥥. 60 segundos de caos navideño.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== BASIC SETUP =====
+    var canvas = document.getElementById("game");
+    var ctx = canvas.getContext("2d");
+
+    var scoreDisplay = document.getElementById("scoreDisplay");
+    var timeDisplay = document.getElementById("timeDisplay");
+    var livesDisplay = document.getElementById("livesDisplay");
+
+    var WIDTH = canvas.width;
+    var HEIGHT = canvas.height;
+    var GROUND_Y = HEIGHT - 70;
+
+    // Game state
+    var running = false;
+    var gameOver = false;
+    var firstScreen = true;
+
+    var score = 0;
+    var lives = 3;
+    var roundSeconds = 60;
+    var timeLeft = roundSeconds; // in seconds
+
+    // Player
+    var player = {
+      x: WIDTH / 2 - 50,
+      y: GROUND_Y,
+      w: 100,
+      h: 20,
+      speed: 350 // px per second
+    };
+
+    // Falling items
+    var items = []; // each: {x, y, size, vy, type}
+    var spawnTimer = 0;
+    var spawnInterval = 0.7; // seconds between spawns
+
+    // Input
+    var keys = {};
+
+    document.addEventListener("keydown", function(e) {
+      var code = e.keyCode || e.which;
+
+      // prevent scroll from arrows and space
+      if (code === 32 || (code >= 37 && code <= 40)) {
+        e.preventDefault();
+      }
+
+      keys[code] = true;
+
+      if (code === 32) { // Space starts / restarts
+        if (!running) {
+          startGame();
+        }
+      }
+    });
+
+    document.addEventListener("keyup", function(e) {
+      var code = e.keyCode || e.which;
+      keys[code] = false;
+    });
+
+    // ===== GAME CONTROL =====
+    function resetState() {
+      score = 0;
+      lives = 3;
+      timeLeft = roundSeconds;
+      items = [];
+      spawnTimer = 0;
+      gameOver = false;
+
+      player.x = WIDTH / 2 - player.w / 2;
+      updateHUD();
+    }
+
+    function startGame() {
+      if (firstScreen) {
+        firstScreen = false;
+      }
+      resetState();
+      running = true;
+    }
+
+    function endGame() {
+      running = false;
+      gameOver = true;
+    }
+
+    function updateHUD() {
+      scoreDisplay.textContent = score;
+      livesDisplay.textContent = lives;
+      timeDisplay.textContent = Math.max(0, Math.ceil(timeLeft));
+    }
+
+    // ===== GAME LOGIC =====
+    function spawnItem() {
+      var size = 22 + Math.random() * 12;
+      var x = Math.random() * (WIDTH - size);
+      var speed = 110 + Math.random() * 140;
+
+      // type: "coqui" (green, +2), "flag" (+3), "coco" (bad)
+      var r = Math.random();
+      var type;
+      if (r < 0.5) {
+        type = "coqui";
+      } else if (r < 0.8) {
+        type = "flag";
+      } else {
+        type = "coco";
+      }
+
+      items.push({
+        x: x,
+        y: -size,
+        size: size,
+        vy: speed,
+        type: type
+      });
+    }
+
+    function rectOverlap(ax, ay, aw, ah, bx, by, bw, bh) {
+      return ax < bx + bw &&
+             ax + aw > bx &&
+             ay < by + bh &&
+             ay + ah > by;
+    }
+
+    function update(delta) {
+      if (!running) return;
+
+      // time
+      timeLeft -= delta;
+      if (timeLeft <= 0) {
+        timeLeft = 0;
+        updateHUD();
+        endGame();
+        return;
+      }
+
+      updateHUD();
+
+      // player movement
+      var move = 0;
+      if (keys[65] || keys[37]) { // A or Left
+        move -= 1;
+      }
+      if (keys[68] || keys[39]) { // D or Right
+        move += 1;
+      }
+      player.x += move * player.speed * delta;
+      if (player.x < 0) player.x = 0;
+      if (player.x + player.w > WIDTH) player.x = WIDTH - player.w;
+
+      // spawn items
+      spawnTimer += delta;
+      if (spawnTimer >= spawnInterval) {
+        spawnItem();
+        spawnTimer = 0;
+      }
+
+      // update items
+      for (var i = items.length - 1; i >= 0; i--) {
+        var it = items[i];
+        it.y += it.vy * delta;
+
+        // Check catch
+        if (rectOverlap(player.x, player.y, player.w, player.h, it.x, it.y, it.size, it.size)) {
+          if (it.type === "coqui") {
+            score += 2;
+          } else if (it.type === "flag") {
+            score += 3;
+          } else if (it.type === "coco") {
+            lives -= 1;
+            if (lives <= 0) {
+              lives = 0;
+              updateHUD();
+              endGame();
+              items.splice(i, 1);
+              continue;
+            }
+          }
+          updateHUD();
+          items.splice(i, 1);
+          continue;
+        }
+
+        // Remove off-screen
+        if (it.y > HEIGHT + 50) {
+          items.splice(i, 1);
+        }
+      }
+    }
+
+    // ===== DRAWING =====
+    function drawBackground() {
+      // sky is from CSS bg, here we add stars, mountains, ocean line
+      ctx.save();
+
+      // stars
+      ctx.fillStyle = "rgba(255,255,255,0.7)";
+      for (var i = 0; i < 36; i++) {
+        var x = (i * 71 + frameCount * 0.25) % WIDTH;
+        var y = (i * 37) % (HEIGHT * 0.5);
+        var r = (i % 5 === 0) ? 2 : 1;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // distant mountains (El Yunque vibes)
+      ctx.fillStyle = "#021a19";
+      ctx.beginPath();
+      ctx.moveTo(0, HEIGHT * 0.65);
+      ctx.lineTo(WIDTH * 0.18, HEIGHT * 0.52);
+      ctx.lineTo(WIDTH * 0.35, HEIGHT * 0.6);
+      ctx.lineTo(WIDTH * 0.5, HEIGHT * 0.5);
+      ctx.lineTo(WIDTH * 0.7, HEIGHT * 0.62);
+      ctx.lineTo(WIDTH * 0.9, HEIGHT * 0.54);
+      ctx.lineTo(WIDTH, HEIGHT * 0.6);
+      ctx.lineTo(WIDTH, HEIGHT);
+      ctx.lineTo(0, HEIGHT);
+      ctx.closePath();
+      ctx.fill();
+
+      // ocean-ish line
+      ctx.fillStyle = "#013b32";
+      ctx.fillRect(0, GROUND_Y + 10, WIDTH, HEIGHT - (GROUND_Y + 10));
+
+      // Puerto Rico flag in corner
+      drawPRFlag(18, 18, 90, 54);
+
+      ctx.restore();
+    }
+
+    function drawPRFlag(x, y, w, h) {
+      // simple PR flag
+      var stripeH = h / 5;
+
+      // red stripes
+      ctx.fillStyle = "#ed1c24";
+      ctx.fillRect(x, y, w, stripeH);
+      ctx.fillRect(x, y + 2 * stripeH, w, stripeH);
+      ctx.fillRect(x, y + 4 * stripeH, w, stripeH);
+
+      // white stripes
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(x, y + stripeH, w, stripeH);
+      ctx.fillRect(x, y + 3 * stripeH, w, stripeH);
+
+      // blue triangle
+      ctx.fillStyle = "#0052a5";
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + w * 0.45, y + h / 2);
+      ctx.lineTo(x, y + h);
+      ctx.closePath();
+      ctx.fill();
+
+      // white star
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      var cx = x + w * 0.17;
+      var cy = y + h / 2;
+      var outerR = h * 0.16;
+      var innerR = outerR * 0.45;
+      var rot = -Math.PI / 2;
+      var spikes = 5;
+      var step = Math.PI / spikes;
+      ctx.moveTo(cx, cy - outerR);
+      for (var i = 0; i < spikes; i++) {
+        var px = cx + Math.cos(rot) * outerR;
+        var py = cy + Math.sin(rot) * outerR;
+        ctx.lineTo(px, py);
+        rot += step;
+        px = cx + Math.cos(rot) * innerR;
+        py = cy + Math.sin(rot) * innerR;
+        ctx.lineTo(px, py);
+        rot += step;
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawPlayer() {
+      ctx.save();
+      ctx.shadowBlur = 14;
+      ctx.shadowColor = "#19ff78";
+
+      // body of little "guagüita"
+      ctx.fillStyle = "#19ff78";
+      ctx.fillRect(player.x, player.y, player.w, player.h);
+
+      // roof
+      ctx.fillStyle = "#0c9447";
+      ctx.fillRect(player.x + player.w * 0.18, player.y - 14, player.w * 0.5, 14);
+
+      // wheels
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#111";
+      var wheelY = player.y + player.h;
+      ctx.beginPath();
+      ctx.arc(player.x + player.w * 0.2, wheelY + 6, 6, 0, Math.PI * 2);
+      ctx.arc(player.x + player.w * 0.8, wheelY + 6, 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      // small Christmas lights
+      ctx.fillStyle = "#fffa65";
+      for (var i = 0; i < 5; i++) {
+        var lx = player.x + 8 + i * (player.w - 16) / 4;
+        var ly = player.y - 3;
+        ctx.beginPath();
+        ctx.arc(lx, ly, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    function drawItems() {
+      for (var i = 0; i < items.length; i++) {
+        var it = items[i];
+        if (it.type === "coqui") {
+          drawCoqui(it.x, it.y, it.size);
+        } else if (it.type === "flag") {
+          drawMiniFlag(it.x, it.y, it.size);
+        } else if (it.type === "coco") {
+          drawCoco(it.x, it.y, it.size);
+        }
+      }
+    }
+
+    function drawCoqui(x, y, s) {
+      ctx.save();
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = "#7CFC00";
+      ctx.fillStyle = "#7CFC00";
+      ctx.beginPath();
+      ctx.arc(x + s / 2, y + s / 2, s / 2.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // eyes
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#000";
+      var ex = x + s * 0.3;
+      var ey = y + s * 0.35;
+      ctx.beginPath();
+      ctx.arc(ex, ey, s * 0.08, 0, Math.PI * 2);
+      ctx.arc(x + s * 0.7, ey, s * 0.08, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawMiniFlag(x, y, s) {
+      ctx.save();
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = "#ff4b5a";
+      drawPRFlag(x, y, s * 1.4, s);
+      ctx.restore();
+    }
+
+    function drawCoco(x, y, s) {
+      ctx.save();
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = "#8B4513";
+      ctx.fillStyle = "#8B4513";
+      ctx.beginPath();
+      ctx.arc(x + s / 2, y + s / 2, s / 2.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // little "eyes"
+      ctx.fillStyle = "#2c1305";
+      ctx.beginPath();
+      ctx.arc(x + s * 0.4, y + s * 0.4, s * 0.06, 0, Math.PI * 2);
+      ctx.arc(x + s * 0.6, y + s * 0.4, s * 0.06, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawOverlay() {
+      ctx.save();
+      ctx.fillStyle = "rgba(0,0,0,0.55)";
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#ffffff";
+
+      if (firstScreen) {
+        ctx.font = "24px system-ui";
+        ctx.fillText("ALVACHRISTMAS: Coquí Catch", WIDTH / 2, HEIGHT / 2 - 40);
+        ctx.font = "16px system-ui";
+        ctx.fillText("Mueve la guagüita con A / D o ← / →", WIDTH / 2, HEIGHT / 2);
+        ctx.fillText("Atrapa coquís y banderas, esquiva cocos", WIDTH / 2, HEIGHT / 2 + 24);
+        ctx.fillText("Presiona SPACE para empezar", WIDTH / 2, HEIGHT / 2 + 50);
+      } else if (gameOver) {
+        ctx.font = "26px system-ui";
+        ctx.fillText("¡Fin del round!", WIDTH / 2, HEIGHT / 2 - 40);
+        ctx.font = "18px system-ui";
+        ctx.fillText("Puntaje: " + score, WIDTH / 2, HEIGHT / 2);
+        ctx.fillText("Presiona SPACE para jugar de nuevo", WIDTH / 2, HEIGHT / 2 + 30);
+      } else if (!running) {
+        ctx.font = "22px system-ui";
+        ctx.fillText("Pausa", WIDTH / 2, HEIGHT / 2 - 10);
+        ctx.font = "16px system-ui";
+        ctx.fillText("Presiona SPACE para continuar", WIDTH / 2, HEIGHT / 2 + 18);
+      }
+
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, WIDTH, HEIGHT);
+      drawBackground();
+      drawItems();
+      drawPlayer();
+
+      if (firstScreen || gameOver || !running) {
+        drawOverlay();
+      }
+    }
+
+    // ===== MAIN LOOP =====
+    var lastTime = 0;
+    var frameCount = 0;
+
+    function loop(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      var delta = (timestamp - lastTime) / 1000; // seconds
+      lastTime = timestamp;
+      frameCount++;
+
+      if (delta > 0.05) delta = 0.05; // clamp in case of tab switches
+
+      if (running && !gameOver) {
+        update(delta);
+      }
+
+      draw();
+      window.requestAnimationFrame(loop);
+    }
+
+    // Start animation loop
+    window.requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
